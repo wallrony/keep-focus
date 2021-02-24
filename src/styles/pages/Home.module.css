@@ -18,3 +18,18 @@
   
   align-content: center;
 }
+
+@media (max-height: 700px) {
+  .container section {
+    padding: 3rem 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .container section {
+    padding: 2.5rem 0;
+
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+}
