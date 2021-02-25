@@ -1,4 +1,4 @@
-import { createContext, useState, ReactNode } from 'react';
+import { createContext, useState, ReactNode, useEffect } from 'react';
 
 import challenges from '../../challenges.json';
 
@@ -14,6 +14,7 @@ interface ChallengesContextProps {
   challengesCompleted: number;
   activeChallenge: IChallenge;
   experienceToNextLevel: number;
+  completeChallenge: () => void;
   levelUp: () => void;
   startNewChallenge: () => void;
   resetChallenge: () => void;
@@ -31,7 +32,11 @@ export default function ChallengesProvider({ children }: ChallengesProviderProps
   const [challengesCompleted, setChallengesCompleted] = useState(0);
   const [activeChallenge, setActiveChallenge] = useState<IChallenge>(undefined);
 
-  const experienceToNextLevel = Math.pow((level + 1) * 4, 2)
+  const experienceToNextLevel = Math.pow((level + 1) * 4, 2);
+
+  useEffect(() => {
+    Notification.requestPermission();
+  }, []);
 
   function levelUp() {
     setLevel(level + 1);
@@ -43,10 +48,38 @@ export default function ChallengesProvider({ children }: ChallengesProviderProps
     const challenge = challenges[randomChallengeIndex];
 
     setActiveChallenge(challenge as IChallenge);
+
+    new Audio('/notification.mp3').play();
+
+    if (Notification.permission === 'granted') {
+      new Notification('Novo Desafio!', {
+        body: `Valendo ${challenge.amount} de xp!`,
+      });
+    }
   }
 
   function resetChallenge() {
     setActiveChallenge(undefined);
+  }
+
+  function completeChallenge() {
+    if (!activeChallenge) {
+      return;
+    }
+
+    const { amount } = activeChallenge;
+
+    let finalExperience = currentExperience + amount;
+
+    if (finalExperience > experienceToNextLevel) {
+      levelUp();
+
+      finalExperience = finalExperience - experienceToNextLevel;
+    }
+
+    setCurrentExperience(finalExperience);
+    setActiveChallenge(undefined);
+    setChallengesCompleted(challengesCompleted + 1);
   }
 
   return (
@@ -60,6 +93,7 @@ export default function ChallengesProvider({ children }: ChallengesProviderProps
         startNewChallenge,
         activeChallenge,
         resetChallenge,
+        completeChallenge
       }}
     >
       {children}
